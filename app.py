@@ -1,9 +1,9 @@
-import os
-import pickle
 import streamlit as st
-import streamlit.components.v1 as components
+import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from query_processing import preprocess_query, query_expansion
+import os
+import streamlit.components.v1 as components
 
 # Load the vectorizer and TF-IDF matrix
 @st.cache_resource
@@ -26,10 +26,10 @@ def load_document_snippets():
 doc_snippets = load_document_snippets()
 
 # Set the path to your PDF documents
-pdf_folder_path = './static/pdfs'  
+pdf_folder_path = './static/pdfs'  # Update this path accordingly
 
 # Set the base URL for PDFs served by the HTTP server
-pdf_base_url = 'http://localhost:8502/static/pdfs' 
+pdf_base_url = 'http://localhost:8502/static/pdfs'  # Adjust this to match your HTTP server
 
 def main():
     if 'results' not in st.session_state:
@@ -37,44 +37,76 @@ def main():
 
     st.title("Document Search Engine")
 
-    # Input query from user
-    query = st.text_input("Enter your search query:")
+    # Inject JavaScript to handle keyboard shortcuts
+    components.html("""
+        <script>
+            const docSearchInput = window.parent.document.querySelectorAll('input[type=text]')[0];
+            window.parent.document.addEventListener('keydown', function(e) {
+                // Check if the input field is not focused
+                if (document.activeElement !== docSearchInput) {
+                    // Keyboard shortcuts
+                    // Focus on input field when '/' is pressed
+                    if (e.key === '/') {
+                        e.preventDefault();
+                        docSearchInput.focus();
+                    }
+                    // Open PDFs with numbers 1 to 5
+                    if (['1', '2', '3', '4', '5'].includes(e.key)) {
+                        e.preventDefault();
+                        const index = parseInt(e.key) - 1;
+                        const links = window.parent.document.querySelectorAll('a.pdf-link');
+                        if (links.length > index) {
+                            window.open(links[index].href, '_blank');
+                        }
+                    }
+                }
+            });
+        </script>
+        """,
+        height=0,
+    )
 
-    if query:
-        # Process the query
-        preprocessed_query = preprocess_query(query)
-        tokens = preprocessed_query.split()
-        expanded_tokens = query_expansion(tokens)
-        expanded_query = ' '.join(expanded_tokens)
+    with st.form(key='search_form'):
+        query = st.text_input("Enter your search query:", key='search_input')
+        num_results = st.selectbox("Number of results to display:", options=range(1, 11), index=4)
+        submit_button = st.form_submit_button(label='Search')
 
-        # Transform the query using the vectorizer
-        query_vector = vectorizer.transform([expanded_query])
+    if submit_button:
+        if query:
+            # Process the query
+            preprocessed_query = preprocess_query(query)
+            tokens = preprocessed_query.split()
+            expanded_tokens = query_expansion(tokens)
+            expanded_query = ' '.join(expanded_tokens)
 
-        # Compute similarity scores
-        similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
+            # Transform the query using the vectorizer
+            query_vector = vectorizer.transform([expanded_query])
 
-        # Rank documents
-        doc_scores = list(zip(doc_ids, similarity_scores))
-        ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
+            # Compute similarity scores
+            similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
 
-        # Store the results in st.session_state
-        num_results = 10  # You may need to define this based on how many results you want to show
-        st.session_state['results'] = {
-            'ranked_docs': ranked_docs,
-            'num_results': num_results
-        }
+            # Rank documents
+            doc_scores = list(zip(doc_ids, similarity_scores))
+            ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
 
-        display_results = True
+            # Store the results in st.session_state
+            st.session_state['results'] = {
+                'ranked_docs': ranked_docs,
+                'num_results': num_results
+            }
+
+            display_results = True
+        else:
+            st.warning("Please enter a query.")
+            display_results = False
     else:
-        st.warning("Please enter a query.")
-        display_results = False
-
-    if st.session_state['results'] is not None:
-        ranked_docs = st.session_state['results']['ranked_docs']
-        num_results = st.session_state['results']['num_results']
-        display_results = True
-    else:
-        display_results = False
+        # If not submit_button, check if we have results in session_state
+        if st.session_state['results'] is not None:
+            ranked_docs = st.session_state['results']['ranked_docs']
+            num_results = st.session_state['results']['num_results']
+            display_results = True
+        else:
+            display_results = False
 
     # Display results if available
     if display_results:
@@ -94,6 +126,7 @@ def main():
                 snippet = doc_snippets.get(doc_id, "")
                 st.write(snippet)
 
+                # Open PDF link (old design)
                 # Create two columns for buttons
                 button_col1, button_col2 = st.columns([1, 1])
 
@@ -103,7 +136,6 @@ def main():
                         f'<a href="{pdf_url}" target="_blank" class="pdf-link"><button style="width:100%">Open PDF</button></a>',
                         unsafe_allow_html=True
                     )
-
                 with button_col2:
                     # Download PDF button
                     with open(doc_path, 'rb') as f:
@@ -115,8 +147,8 @@ def main():
                         mime='application/pdf'
                     )
 
-                # Add divider
-                st.markdown('---')
+                    # Add divider
+                    st.markdown('---')
             else:
                 break
         if not results_found:
