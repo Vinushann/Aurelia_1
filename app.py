@@ -31,6 +31,7 @@ def main():
         tokens = preprocessed_query.split()
         expanded_tokens = query_expansion(tokens)
         expanded_query = ' '.join(expanded_tokens)
+        # st.write(expanded_query)
 
         # Transform the query using the vectorizer
         query_vector = vectorizer.transform([expanded_query])
