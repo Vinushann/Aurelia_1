@@ -112,6 +112,8 @@ def main():
     if display_results:
         st.header("Search Results")
         results_found = False
+        
+        #Metrics about the IR system
         # st.write("------------------------------------------------------------------------")
         st.write(ranked_docs)
         # st.write("------------------------------------------------------------------------")
