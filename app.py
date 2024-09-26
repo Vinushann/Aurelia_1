@@ -1,6 +1,7 @@
 import os
 import pickle
 import streamlit as st
+import streamlit.components.v1 as components
 from sklearn.metrics.pairwise import cosine_similarity
 from query_processing import preprocess_query, query_expansion
 
@@ -15,52 +16,139 @@ def load_vectorizer_and_matrix():
 
 vectorizer, tfidf_matrix, doc_ids = load_vectorizer_and_matrix()
 
-# Set the path to PDF documents
-pdf_folder_path = './Doc/Raw'
+# Load document snippets
+@st.cache_resource
+def load_document_snippets():
+    with open('doc_snippets.pkl', 'rb') as f:
+        doc_snippets = pickle.load(f)
+    return doc_snippets
 
-# Main Streamlit app
+doc_snippets = load_document_snippets()
+
+# Set the path to your PDF documents
+pdf_folder_path = './static/pdfs'  
+
+# Set the base URL for PDFs served by the HTTP server
+pdf_base_url = 'http://localhost:8502/static/pdfs' 
+
 def main():
+    if 'results' not in st.session_state:
+        st.session_state['results'] = None
+
     st.title("Document Search Engine")
 
-    # Input query from user
-    query = st.text_input("Enter your search query:")
+    # Inject JavaScript to handle keyboard shortcuts
+    components.html("""
+        <script>
+            const docSearchInput = window.parent.document.querySelectorAll('input[type=text]')[0];
+            window.parent.document.addEventListener('keydown', function(e) {
+                // Check if the input field is not focused
+                if (document.activeElement !== docSearchInput) {
+                    // Keyboard shortcuts
+                    // Focus on input field when '/' is pressed
+                    if (e.key === '/') {
+                        e.preventDefault();
+                        docSearchInput.focus();
+                    }
+                    // Open PDFs with numbers 1 to 5
+                    if (['1', '2', '3', '4', '5'].includes(e.key)) {
+                        e.preventDefault();
+                        const index = parseInt(e.key) - 1;
+                        const links = window.parent.document.querySelectorAll('a.pdf-link');
+                        if (links.length > index) {
+                            window.open(links[index].href, '_blank');
+                        }
+                    }
+                }
+            });
+        </script>
+        """,
+        height=0,
+    )
 
-    if query:
-        # Process the query
-        preprocessed_query = preprocess_query(query)
-        tokens = preprocessed_query.split()
-        expanded_tokens = query_expansion(tokens)
-        expanded_query = ' '.join(expanded_tokens)
+    with st.form(key='search_form'):
+        query = st.text_input("Enter your search query:", key='search_input')
+        num_results = st.selectbox("Number of results to display:", options=range(1, 11), index=4)
+        submit_button = st.form_submit_button(label='Search')
 
-        # Transform the query using the vectorizer
-        query_vector = vectorizer.transform([expanded_query])
+    if submit_button:
+        if query:
+            # Process the query
+            preprocessed_query = preprocess_query(query)
+            tokens = preprocessed_query.split()
+            expanded_tokens = query_expansion(tokens)
+            expanded_query = ' '.join(expanded_tokens)
 
-        # Compute similarity scores
-        similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
+            # Transform the query using the vectorizer
+            query_vector = vectorizer.transform([expanded_query])
 
-        # Rank documents
-        doc_scores = list(zip(doc_ids, similarity_scores))
-        ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
+            # Compute similarity scores
+            similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
 
-        # Display the results
+            # Rank documents
+            doc_scores = list(zip(doc_ids, similarity_scores))
+            ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
+
+            # Store the results in st.session_state
+            st.session_state['results'] = {
+                'ranked_docs': ranked_docs,
+                'num_results': num_results
+            }
+
+            display_results = True
+        else:
+            st.warning("Please enter a query.")
+            display_results = False
+    else:
+        # If not submit_button, check if we have results in session_state
+        if st.session_state['results'] is not None:
+            ranked_docs = st.session_state['results']['ranked_docs']
+            num_results = st.session_state['results']['num_results']
+            display_results = True
+        else:
+            display_results = False
+
+    # Display results if available
+    if display_results:
         st.header("Search Results")
         results_found = False
 
-        for doc_id, score in ranked_docs[:10]:
+        for idx, (doc_id, score) in enumerate(ranked_docs[:num_results]):
             if score > 0:
                 results_found = True
                 doc_path = os.path.join(pdf_folder_path, doc_id)
-                # Create a link to open the PDF in a new tab
-                with open(doc_path, 'rb') as f:
-                    pdf_data = f.read()
-                st.write(f"**Document:** {doc_id}")
+                pdf_url = f"{pdf_base_url}/{doc_id}"
+
+                st.write(f"**Document {idx + 1}:** {doc_id}")
                 st.write(f"**Relevance Score:** {score:.4f}")
-                st.download_button(
-                    label="Open PDF",
-                    data=pdf_data,
-                    file_name=doc_id,
-                    mime='application/pdf'
-                )
+
+                # Display snippet
+                snippet = doc_snippets.get(doc_id, "")
+                st.write(snippet)
+
+                # Create two columns for buttons
+                button_col1, button_col2 = st.columns([1, 1])
+
+                with button_col1:
+                    # Open PDF button styled with HTML
+                    st.markdown(
+                        f'<a href="{pdf_url}" target="_blank" class="pdf-link"><button style="width:100%">Open PDF</button></a>',
+                        unsafe_allow_html=True
+                    )
+
+                with button_col2:
+                    # Download PDF button
+                    with open(doc_path, 'rb') as f:
+                        pdf_data = f.read()
+                    st.download_button(
+                        label="Download PDF",
+                        data=pdf_data,
+                        file_name=doc_id,
+                        mime='application/pdf'
+                    )
+
+                # Add divider
+                st.markdown('---')
             else:
                 break
         if not results_found:

@@ -45,20 +45,28 @@ def preprocess_text(text):
     preprocessed_text = ' '.join(tokens)
     return preprocessed_text
 
+# In preprocess_documents.py
 def preprocess_documents(documents):
     preprocessed_docs = {}
+    doc_snippets = {}
     for doc_id, text in documents.items():
         preprocessed_text = preprocess_text(text)
-        if not preprocessed_text.strip():
-            print(f"Document {doc_id} is empty after preprocessing.")
-        else:
-            print(f"Document {doc_id} has content after preprocessing.")
         preprocessed_docs[doc_id] = preprocessed_text
+
+        # Save the first 100 words of the original text
+        snippet_words = text.split()[:100]
+        snippet = ' '.join(snippet_words)
+        doc_snippets[doc_id] = snippet
+
+    # Save snippets
+    with open('doc_snippets.pkl', 'wb') as f:
+        pickle.dump(doc_snippets, f)
+
     return preprocessed_docs
 
 
 if __name__ == '__main__':
-    pdf_folder_path = './Doc/Raw'  # Update this path
+    pdf_folder_path = './static/pdfs'  # Update this path
     documents = extract_text_from_pdfs(pdf_folder_path)
     preprocessed_documents = preprocess_documents(documents)
     # Save preprocessed documents for later use
