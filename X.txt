@@ -6,3 +6,5 @@ python vectorization.py
 
 Step 3: Query and Retrieve Documents
 python ranking.py
+
+python -m http.server 8502
