@@ -67,7 +67,7 @@ def main():
     )
 
     with st.form(key='search_form'):
-        query = st.text_input("Enter your search query:", key='search_input')
+        query = st.text_input("Enter your search query:", key='search_input', value ="tower")
         num_results = st.selectbox("Number of results to display:", options=range(1, 11), index=4)
         submit_button = st.form_submit_button(label='Search')
 
@@ -112,6 +112,24 @@ def main():
     if display_results:
         st.header("Search Results")
         results_found = False
+        # st.write("------------------------------------------------------------------------")
+        st.write(ranked_docs)
+        # st.write("------------------------------------------------------------------------")
+        
+        # for doc in ranked_docs:
+            # st.write(doc[0])
+        # thinking the query is "tower place"
+        y_actual = ["Burj Khalifa.pdf", "Eiffel Tower.pdf"]
+        y_true = [1 if doc[0] in y_actual else 0 for doc in ranked_docs]
+        y_pred = [1] * len(ranked_docs)
+        
+        from sklearn.metrics import precision_score, recall_score, f1_score
+
+        precision = precision_score(y_true, y_pred, zero_division=0)
+        recall = recall_score(y_true, y_pred, zero_division=0)
+        f1 = f1_score(y_true, y_pred, zero_division=0)
+        
+        st.write(f"Precision: {precision}, Recall: {recall}, F1-Score: {f1}")
 
         for idx, (doc_id, score) in enumerate(ranked_docs[:num_results]):
             if score > 0:
