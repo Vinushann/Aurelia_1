@@ -1,8 +1,8 @@
-import streamlit as st
+import os
 import pickle
+import streamlit as st
 from sklearn.metrics.pairwise import cosine_similarity
 from query_processing import preprocess_query, query_expansion
-import os
 
 # Load the vectorizer and TF-IDF matrix
 @st.cache_resource
@@ -15,8 +15,8 @@ def load_vectorizer_and_matrix():
 
 vectorizer, tfidf_matrix, doc_ids = load_vectorizer_and_matrix()
 
-# Set the path to your PDF documents
-pdf_folder_path = './Doc/Raw'  # Update this path
+# Set the path to PDF documents
+pdf_folder_path = './Doc/Raw'
 
 # Main Streamlit app
 def main():

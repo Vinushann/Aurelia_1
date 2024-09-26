@@ -1,9 +1,10 @@
 import nltk
+import string
+from nltk.corpus import wordnet
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-import string
 
-# Ensure necessary NLTK data files are downloaded
+# NLTK data files download
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -12,7 +13,7 @@ def preprocess_query(query):
     # Lowercase the query
     query = query.lower()
     # Remove punctuation (keep numbers)
-    punctuations = string.punctuation.replace('-', '')  # Keep hyphens (if needed)
+    punctuations = string.punctuation.replace('-', '')
     query = query.translate(str.maketrans('', '', punctuations))
     # Tokenize the query
     tokens = nltk.word_tokenize(query)
@@ -27,7 +28,6 @@ def preprocess_query(query):
     return preprocessed_query
 
 def query_expansion(tokens):
-    from nltk.corpus import wordnet
     expanded_tokens = tokens.copy()
     for token in tokens:
         synonyms = wordnet.synsets(token)
