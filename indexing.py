@@ -31,6 +31,7 @@ def build_inverted_index(preprocessed_documents):
 if __name__ == '__main__':
     preprocessed_documents = load_preprocessed_documents()
     inverted_index, idf, doc_term_counts = build_inverted_index(preprocessed_documents)
+    
     # Save for later use
     with open('inverted_index.pkl', 'wb') as f:
         pickle.dump(inverted_index, f)

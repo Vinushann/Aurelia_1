@@ -15,6 +15,7 @@ def process_query(vectorizer):
     tokens = preprocessed_query.split()
     expanded_tokens = query_expansion(tokens)
     expanded_query = ' '.join(expanded_tokens)
+
     # Transform the query using the same vectorizer
     query_vector = vectorizer.transform([expanded_query])
     return query_vector
