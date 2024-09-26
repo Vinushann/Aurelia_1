@@ -47,34 +47,34 @@ def main():
         expanded_tokens = query_expansion(tokens)
         expanded_query = ' '.join(expanded_tokens)
 
-            # Transform the query using the vectorizer
-            query_vector = vectorizer.transform([expanded_query])
+        # Transform the query using the vectorizer
+        query_vector = vectorizer.transform([expanded_query])
 
-            # Compute similarity scores
-            similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
+        # Compute similarity scores
+        similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
 
-            # Rank documents
-            doc_scores = list(zip(doc_ids, similarity_scores))
-            ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
+        # Rank documents
+        doc_scores = list(zip(doc_ids, similarity_scores))
+        ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
 
-            # Store the results in st.session_state
-            st.session_state['results'] = {
-                'ranked_docs': ranked_docs,
-                'num_results': num_results
-            }
+        # Store the results in st.session_state
+        num_results = 10  # You may need to define this based on how many results you want to show
+        st.session_state['results'] = {
+            'ranked_docs': ranked_docs,
+            'num_results': num_results
+        }
 
-            display_results = True
-        else:
-            st.warning("Please enter a query.")
-            display_results = False
+        display_results = True
     else:
-        # If not submit_button, check if we have results in session_state
-        if st.session_state['results'] is not None:
-            ranked_docs = st.session_state['results']['ranked_docs']
-            num_results = st.session_state['results']['num_results']
-            display_results = True
-        else:
-            display_results = False
+        st.warning("Please enter a query.")
+        display_results = False
+
+    if st.session_state['results'] is not None:
+        ranked_docs = st.session_state['results']['ranked_docs']
+        num_results = st.session_state['results']['num_results']
+        display_results = True
+    else:
+        display_results = False
 
     # Display results if available
     if display_results:
