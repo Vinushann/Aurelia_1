@@ -13,7 +13,7 @@ def vectorize_documents(preprocessed_documents):
     # Initialize TfidfVectorizer with appropriate parameters
     vectorizer = TfidfVectorizer()
     # Fit and transform the documents
-    tfidf_matrix = vectorizer.fit_transform(documents)
+    tfidf_matrix = vectorizer.fit_transform(documents)   #documents is as  ["Content of doc1", "Content of doc2"]
     # Save the vectorizer and tfidf_matrix for later use
     with open('tfidf_vectorizer.pkl', 'wb') as f:
         pickle.dump(vectorizer, f)

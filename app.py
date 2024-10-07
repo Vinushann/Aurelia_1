@@ -67,7 +67,7 @@ def main():
     )
 
     with st.form(key='search_form'):
-        query = st.text_input("Enter your search query:", key='search_input', value ="tower")
+        query = st.text_input("Enter your search query:", key='search_input', value ="")
         num_results = st.selectbox("Number of results to display:", options=range(1, 11), index=4)
         submit_button = st.form_submit_button(label='Search')
 
@@ -81,14 +81,18 @@ def main():
 
             # Transform the query using the vectorizer
             query_vector = vectorizer.transform([expanded_query])
+            # print(tfidf_matrix.shape)
 
             # Compute similarity scores
-            similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
+            similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]   #This is going to calc the cosine similarity between the query_vector row with each of the other 25 rows(ie 25 docs). 
+                                                                                   #And note that, the cols are the vocab. To view it, use 
+                                                                                        # print(vectorizer.get_feature_names_out()) 
+            # print(similarity_scores)
 
             # Rank documents
             doc_scores = list(zip(doc_ids, similarity_scores))
             ranked_docs = sorted(doc_scores, key=lambda x: x[1], reverse=True)
-
+            
             # Store the results in st.session_state
             st.session_state['results'] = {
                 'ranked_docs': ranked_docs,
@@ -115,7 +119,7 @@ def main():
         
         #Metrics about the IR system
         # st.write("------------------------------------------------------------------------")
-        st.write(ranked_docs)
+        # st.write(ranked_docs)
         # st.write("------------------------------------------------------------------------")
         
         # for doc in ranked_docs:

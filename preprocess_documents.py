@@ -40,7 +40,7 @@ def preprocess_text(text):
     tokens = [token for token in tokens if token not in stop_words]
     # Lemmatization
     lemmatizer = WordNetLemmatizer()
-    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]      #ex: Changing, Changed, Change   ->   Change
     # Join tokens back to string
     preprocessed_text = ' '.join(tokens)
     return preprocessed_text
