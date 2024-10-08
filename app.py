@@ -135,7 +135,7 @@ def main():
         recall = recall_score(y_true, y_pred, zero_division=0)
         f1 = f1_score(y_true, y_pred, zero_division=0)
         
-        st.write(f"Precision: {precision}, Recall: {recall}, F1-Score: {f1}")
+        # st.write(f"Precision: {precision}, Recall: {recall}, F1-Score: {f1}")
 
         for idx, (doc_id, score) in enumerate(ranked_docs[:num_results]):
             if score > 0:
